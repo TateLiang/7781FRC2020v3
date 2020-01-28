@@ -1,11 +1,13 @@
 // Robot.java: The main file of the robot
+// - handles joystick controls
+
 // Author: Tate Liang
 // CO-Author: Bob Xiong
 // Date: Jan 22, 2020
 
-// Importing libraries
 package frc.robot;
 
+// Importing libraries
 // Color sensor libraries
 //import edu.wpi.first.wpilibj.util.Color;
 //import com.revrobotics.ColorSensorV3;
@@ -15,18 +17,15 @@ package frc.robot;
 // Import SmartDashboard
 //import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+//Import functions
+import frc.robot.Function_Drive;
+
 // Import servo library
 import edu.wpi.first.wpilibj.Servo;
 
 // Utilizing I2C
 //import edu.wpi.first.wpilibj.I2C;
 
-// Phoenix library
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
-// Import motor control
-//import static org.junit.Assume.assumeTrue;
 import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.can.*;
 
@@ -36,25 +35,11 @@ import edu.wpi.first.wpilibj.TimedRobot;
 
 public class Robot extends TimedRobot{
 
-	/* MOTORS*/
-	// Setting ID for motors
-	// Drive train motors
-	// Talons are masters; Victors are slaves
-
-	// Set ID for front left motor as Talon SRX 3
-	WPI_TalonSRX _frontLeftMotor = new WPI_TalonSRX(3);
-	// Set ID for front right motor as Talon SRX 6
-	WPI_TalonSRX _frontRightMotor = new WPI_TalonSRX(6);
-	// Set ID for left slave motor as Victor SPX 4
-	WPI_VictorSPX _leftSlave1 = new WPI_VictorSPX(4);
-	// Set ID for right slave motor as Victor SPX 5
-	WPI_VictorSPX _rightSlave1 = new WPI_VictorSPX(5);
+	/* DEFINING FUNCTIONS */
+	Function_Drive driveTrain = new Function_Drive();
 
 	WPI_TalonSRX _colorWheel = new WPI_TalonSRX(1); // Color wheel motor
 	Joystick _gamepad = new Joystick(0); // Initate joystick object
-	
-	DifferentialDrive _drive = new DifferentialDrive(_frontLeftMotor, _frontRightMotor);
-
 	// Servo for arm, PWM 0
 	Servo _armServo = new Servo(0);
 	// Left servo for trough, PWM 1
@@ -94,33 +79,7 @@ public class Robot extends TimedRobot{
 		//m_colorMatcher.addColorMatch(kRedTarget);
 		//m_colorMatcher.addColorMatch(kYellowTarget); 
 
-		// Factory reset all motor controllers in case of software corruption
-		_frontLeftMotor.configFactoryDefault();
-		_frontRightMotor.configFactoryDefault();
-		_leftSlave1.configFactoryDefault();
-		_rightSlave1.configFactoryDefault();
-		
-		_colorWheel.configFactoryDefault();
-
-		// Set left back motor and right back motor to be the slaves of left front
-		// motor and right front motor, respectively
-		_leftSlave1.follow(_frontLeftMotor);
-		_rightSlave1.follow(_frontRightMotor);
-		
-		/* Set Neutral mode */
-		_frontLeftMotor.setNeutralMode(NeutralMode.Brake);
-		_frontRightMotor.setNeutralMode(NeutralMode.Brake);
-		
-		_colorWheel.setNeutralMode(NeutralMode.Brake);
-		
-		/* Configure output direction */
-		_frontLeftMotor.setInverted(false); // <<<<<< Adjust this until robot drives forward when stick is forward
-		_frontRightMotor.setInverted(true); // <<<<<< Adjust this until robot drives forward when stick is forward
-
-		// Invert direction so gears don't grind each other (death)
-		_leftSlave1.setInverted(InvertType.FollowMaster);
-		_rightSlave1.setInverted(InvertType.FollowMaster);
-		System.out.println("This is Arcade Drive using Arbitrary Feed Forward.");
+		driveTrain.driveSetup();
 
 		// Set all servo angles to 0
 		leftServo.setAngle(0);
@@ -193,7 +152,7 @@ public class Robot extends TimedRobot{
 		turn = Deadband(turn);
 
 		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
-		_drive.arcadeDrive(turn, forward);
+		driveTrain.drivePeriodic(turn, forward);
 
 		/* Colour wheel */
 		// If trigger button is pressed, spin the color wheel
