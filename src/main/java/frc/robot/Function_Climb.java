@@ -7,8 +7,18 @@ public class Function_Climb {
 
     // Servo for arm, PWM 0
 	Servo _armServo = new Servo(0);
-	// Left servo for trough, PWM 1
-	Servo leftServo = new Servo(1);
-	// Right servo for trough, PWM 2
-	Servo rightServo = new Servo(2);
+
+	public void armServoSetup() {
+		_armServo.setPosition(0.25);
+	}
+
+	public void toggleArmServo() {
+		System.out.println(_armServo.getPosition());
+
+		if (_armServo.getPosition() == 1){
+			_armServo.setPosition(0.25);
+		}else if(_armServo.getPosition() == 0.25){
+			_armServo.setPosition(1);
+		}
+	}
 }
