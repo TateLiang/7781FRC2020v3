@@ -14,6 +14,10 @@ import frc.robot.Function_Climb;
 import frc.robot.Function_Intake;
 import frc.robot.Function_Wheel;
 
+// Camera server library
+import edu.wpi.first.wpilibj.CameraServer;
+
+
 import edu.wpi.first.wpilibj.Joystick; // Import Joystick module
 
 import edu.wpi.first.wpilibj.TimedRobot; //import timed robot
@@ -30,6 +34,7 @@ public class Robot extends TimedRobot{
 	
 	@Override
 	public void robotInit() {
+		CameraServer.getInstance().startAutomaticCapture("epic",0);
 		driveTrain.driveSetup();	
 	}
 	
@@ -45,9 +50,14 @@ public class Robot extends TimedRobot{
 		
 		/*---- GAMEPAD ----*/
 		boolean triggerButton = _gamepad.getRawButton(1); // Initiate trigger button for the color wheel
-		boolean topButton = _gamepad.getRawButton(2); // Initiate top button for arm servo
-		boolean troughButton = _gamepad.getRawButton(2); // Initiate button 1 (left botton on top) for ball trough
-	  
+		boolean topButton = _gamepad.getRawButton(5); // Initiate top button for arm servo
+		boolean troughButton = _gamepad.getRawButton(5); // Initiate button 1 (left botton on top) for ball trough
+		boolean otherDirection = _gamepad.getRawButton(2);
+		boolean pull = _gamepad.getRawButton(3);
+		boolean release = _gamepad.getRawButton(4);
+		//boolean sensitivity = _gamepad.getThrottle();
+
+
 		/*---- DRIVE ----*/
 		double forward = -1 * _gamepad.getY(); // Going forwards and backwards by tracking joystick position
 		double turn = _gamepad.getTwist(); // Turning by tracking joystick twist angle
@@ -59,11 +69,14 @@ public class Robot extends TimedRobot{
 		driveTrain.drivePeriodic(turn, forward);
 
 		/*---- COLOUR WHEEL ----*/
+		wheel.colourSensorPeriodic();
 		// If trigger button is pressed, spin the color wheel
 		if (triggerButton){
-			wheel.spinColourWheel(true);
+			wheel.spinColourWheel(-0.4);
+		}else if(otherDirection){
+			wheel.spinColourWheel(0.4);
 		}else {
-			wheel.spinColourWheel(false);
+			wheel.spinColourWheel(0);
 		}
 
 		/*---- CLIMB ----*/
@@ -71,6 +84,15 @@ public class Robot extends TimedRobot{
 		if (topButton){
 			climb.toggleArmServo();
 		} 
+
+		// Rope pull or release
+		if (pull){
+			climb.pullArm(0.4);
+		} else if(release){
+			climb.pullArm(-0.4);
+		} else{
+			climb.pullArm(0);
+		}
 		
 		/*---- INTAKE & TROUGH ----*/
 		// If trough button is pressed, switch servo state by subtracting angle from 90 degrees
