@@ -132,7 +132,7 @@ public class Robot extends TimedRobot{
 		}
 		
 		
-
+//try
 		// If trigger button is pressed, spin the color wheel
 		if (backUp1){
 			spin.spinMotor(-0.1);
