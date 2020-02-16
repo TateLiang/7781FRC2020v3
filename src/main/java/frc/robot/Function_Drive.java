@@ -23,9 +23,6 @@ public class Function_Drive {
     WPI_VictorSPX _leftSlave1 = new WPI_VictorSPX(4);
     // Set ID for right slave motor as Victor SPX 5
     WPI_VictorSPX _rightSlave1 = new WPI_VictorSPX(5);
-
-    WPI_TalonSRX _colorWheel = new WPI_TalonSRX(1); // Color wheel motor
-
     DifferentialDrive _drive = new DifferentialDrive(_frontLeftMotor, _frontRightMotor);
 
 
@@ -36,8 +33,6 @@ public class Function_Drive {
 		_leftSlave1.configFactoryDefault();
 		_rightSlave1.configFactoryDefault();
 		
-		_colorWheel.configFactoryDefault();
-
 		// Set left back motor and right back motor to be the slaves of left front
 		// motor and right front motor, respectively
 		_leftSlave1.follow(_frontLeftMotor);
