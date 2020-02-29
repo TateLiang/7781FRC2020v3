@@ -23,7 +23,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Function_Wheel {
     
-    boolean automatic;
+    boolean automaticRotation = false;
+    boolean automaticPosition = false;
     String firstColor;
     String lastColor;
     boolean colorControl;
@@ -31,7 +32,7 @@ public class Function_Wheel {
     int greenCount = 0;
     int blueCount = 0;
     int yellowCount = 0;
-    WPI_TalonSRX _colorWheel = new WPI_TalonSRX(1); // Color wheel motor
+    WPI_VictorSPX _colorWheel = new WPI_VictorSPX(7); // Color wheel motor
 
     // Set I2C motor port as kOnboard port
     
@@ -52,6 +53,7 @@ public class Function_Wheel {
    
     
     public void colourSensorSetup() {
+        
         // Initiate color range variables
 		m_colorMatcher.addColorMatch(kBlueTarget);
 		m_colorMatcher.addColorMatch(kGreenTarget);
@@ -63,6 +65,7 @@ public class Function_Wheel {
         spin.spinSetUp();
     }
     public String colourSensorPeriodic() {
+        
             /**
          * The method GetColor() returns a normalized color value from the sensor and can be
          * useful if outputting the color to an RGB LED or similar. To
@@ -93,26 +96,15 @@ public class Function_Wheel {
         colorString = "Unknown";
         }
     
-        /**
-         * Open Smart Dashboard or Shuffleboard to see the color detected by the 
-         * sensor.
-         */
-        /*
-        SmartDashboard.putNumber("Red", detectedColor.red);
         
-        SmartDashboard.putNumber("Green", detectedColor.green);
-        SmartDashboard.putNumber("Blue", detectedColor.blue);
-       // SmartDashboard.putNumber("yellow", detectedColor.yellow)
-        SmartDashboard.putNumber("Confidence", match.confidence);
-        SmartDashboard.putString("Detected Color", colorString);
-        */
         return colorString;
     }
 
+    // Rotation control function
     public void rotationControlPeriodic(String colorString) {
         if (colorString=="start"){
             // Initiate variables
-            automatic = true;
+            automaticRotation = true;
             firstColor = colorString;
             lastColor = colorString;
             redCount = 0;
@@ -122,14 +114,18 @@ public class Function_Wheel {
             System.out.println("rotation control starting!!");
         } else if (colorString == "stop"){
             // Exit rotation control mode
-            automatic = false;
+            automaticRotation = false;
             System.out.println("rotation control stopping!!");
         }
 
   
-        if (automatic==true){
-            spin.spinMotor(0.3);
-           
+        if (automaticRotation==true && automaticPosition==false){
+            // Spin the motor
+            spin.spinMotor(0.4);
+    
+            System.out.println("rotation control in process");
+
+            // Color increment
             if (colorString != lastColor){
                 System.out.println("Different color");
                 if (colorString=="Red"){
@@ -143,37 +139,50 @@ public class Function_Wheel {
                 }
             }
             
-            if(yellowCount >= 4 || redCount >= 4 || blueCount >= 4 || greenCount >= 4){
-                automatic = false;
+            // If the wheel is spun 4 times, exit rotation control mode
+            if(yellowCount >= 10000 || redCount >= 6 || blueCount >= 6 || greenCount >= 6){
+                automaticRotation = false;
                 System.out.println("Spun the wheel 4 times, stopped spinning");
                 
             }
             lastColor = colorString;
 
+        } else if (automaticPosition==false){
+            spin.spinMotor(0);
         }
     }
 
+    // Position control mode
     public void positionControlPeriodic(String colorString, int targetColor){
         if (colorString=="start"){
             // Initiate variables
-            automatic = true;
+            automaticPosition = true;
             System.out.println("position control starting");
         } else if (colorString == "stop"){
-            automatic = false;
+            // Exit color control mode
+            automaticPosition = false;
             System.out.println("position control emergency stopping");
         } else {
-           
-            if(automatic == true){
+            if(automaticPosition == true && automaticRotation==false){
+                //
+                System.out.println("position control in progress");
                 String[] colorArray = new String[]{"Red","Green","Blue","Yellow"};
                 String sensorTarget = colorArray[targetColor+1];
                 spin.spinMotor(0.2);
                 if(colorString==sensorTarget){
-                    automatic=false;
+                    automaticPosition=false;
                     System.out.println("color target reached, stopping position control");
                 }
+            } else if(automaticRotation == false){
+                spin.spinMotor(0);
             }
         }
 
 
+    }
+    public void stopMotor(){
+        if (automaticPosition==false&&automaticRotation==false){
+            spin.spinMotor(0);
+        }
     }
 }

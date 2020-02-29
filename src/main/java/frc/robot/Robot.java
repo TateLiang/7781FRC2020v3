@@ -18,7 +18,6 @@ import frc.robot.Function_Spin;
 // Camera server library
 import edu.wpi.first.wpilibj.CameraServer;
 
-
 import edu.wpi.first.wpilibj.Joystick; // Import Joystick module
 
 import edu.wpi.first.wpilibj.TimedRobot; //import timed robot
@@ -31,8 +30,8 @@ import java.awt.event.KeyEvent;
 
 
 public class Robot extends TimedRobot{
-	int targetColor;
 	
+	long autonomousTime = System.currentTimeMillis();
 
 	/* DEFINING FUNCTIONS */
 	Function_Drive driveTrain = new Function_Drive();
@@ -42,13 +41,26 @@ public class Robot extends TimedRobot{
 	Function_Spin spin = new Function_Spin();
 
 	Joystick _gamepad = new Joystick(0);
-	
+	int targetColor;
 	@Override
 	public void robotInit() {
 		CameraServer.getInstance().startAutomaticCapture("epic",0);
 		driveTrain.driveSetup();	
 	}
-	
+	@Override
+	public void autonomousInit() {
+		driveTrain.driveSetup();
+	}
+
+	@Override 
+	public void autonomousPeriodic(){
+		if((System.currentTimeMillis()-autonomousTime)<3000){
+			driveTrain.drivePeriodic(0, 0.5);
+		}
+		
+	}
+
+
 	@Override
 	public void teleopInit(){
 		climb.armServoSetup();
@@ -62,25 +74,31 @@ public class Robot extends TimedRobot{
 	public void teleopPeriodic() {	
 		
 		/*---- GAMEPAD ----*/
-		
-		boolean topButton = _gamepad.getRawButton(5); // Initiate top button for arm servo
-		boolean troughButton = _gamepad.getRawButton(5); // Initiate button 1 (left botton on top) for ball trough
-		
-		// arm
-		boolean pull = _gamepad.getRawButton(1);
-		boolean release = _gamepad.getRawButton(2);
-		
-		// color wheel backup
-		boolean backUp1 = _gamepad.getRawButton(7);
-		boolean backUp2 = _gamepad.getRawButton(8);
+		int POV = _gamepad.getPOV();
+
+		// trough servo
+		boolean changeIntakeState = _gamepad.getRawButton(1);
+
+		// exit color wheel mode
+		boolean colorAutomaticOff = _gamepad.getRawButton(2);
 
 		// color wheel rotation control
-		boolean colorWheelOn = _gamepad.getRawButton(3);
-		boolean colorWheelOff = _gamepad.getRawButton(4);
+		boolean rotationControlOn = _gamepad.getRawButton(3);
 
 		// color wheel color control
-		boolean colorControlOn = _gamepad.getRawButton(5);
-		boolean colorControlOff = _gamepad.getRawButton(6);
+		boolean positionControlOn = _gamepad.getRawButton(4);
+
+		// pulley arm up
+		boolean pullUp = _gamepad.getRawButton(5);
+		
+		// pulley arm down
+		boolean pullDown = _gamepad.getRawButton(6);
+
+		// pull hook down, aka robot up
+		boolean raiseUp = _gamepad.getRawButton(7);
+
+		// release hook
+		boolean robotDown = _gamepad.getRawButton(8);
 
 		//select color
 		boolean redButton = _gamepad.getRawButton(9);
@@ -88,11 +106,10 @@ public class Robot extends TimedRobot{
 		boolean blueButton = _gamepad.getRawButton(11);
 		boolean yellowButton = _gamepad.getRawButton(12);
 		
-
 		// sensitivity control
 		double sensitivity = 1-( _gamepad.getThrottle() + 1)/2;
-
-
+		
+		
 		/*---- DRIVE ----*/
 		double forward = -1 * _gamepad.getY(); // Going forwards and backwards by tracking joystick position
 		double turn = _gamepad.getTwist(); // Turning by tracking joystick twist angle
@@ -101,13 +118,13 @@ public class Robot extends TimedRobot{
 		turn = Deadband(turn);
 		forward = sensitivity*forward;
 		turn = sensitivity*turn;
-		//System.out.println(forward+turn);
 
 		/* Arcade Drive using PercentOutput along with Arbitrary Feed Forward supplied by turn */
 		driveTrain.drivePeriodic(turn, forward);
 
 		/*---- COLOUR WHEEL ----*/
 		
+		// Set color
 		if (redButton){
 			targetColor = 0;
 		} else if(greenButton){
@@ -118,62 +135,58 @@ public class Robot extends TimedRobot{
 			targetColor = 3;
 		} 
 		
+		// Find color
 		String colorDetected = wheel.colourSensorPeriodic();
-		if (colorWheelOn){
+		
+		// Different modes
+		if (rotationControlOn){
 			wheel.rotationControlPeriodic("start");
-		} else if (colorWheelOff){
-			wheel.rotationControlPeriodic("stop");
-		} else if (colorControlOn){
+		} else if (positionControlOn){
 			wheel.positionControlPeriodic("start",-1);
-		}
-		else{
+		} else if (colorAutomaticOff){
+			wheel.rotationControlPeriodic("stop");
+			wheel.positionControlPeriodic("stop", -1);
+			System.out.println("stoppping!!!!");
+		} else{
 			wheel.rotationControlPeriodic(colorDetected);
 			wheel.positionControlPeriodic(colorDetected,targetColor);
 		}
 		
-		
-//try
-		// If trigger button is pressed, spin the color wheel
-		if (backUp1){
-			spin.spinMotor(-0.1);
-		}else if(backUp2){
-			spin.spinMotor(0.1);
-		}else {
-			spin.spinMotor(0);
-		}
+		intake.spinIn(changeIntakeState);
 
+	
 		/*---- CLIMB ----*/
-		// Toggle servo states
-		if (topButton){
-			climb.toggleArmServo();
-		} 
 
 		// Rope pull or release
-		if (pull){
-			climb.pullArm(0.4);
-		} else if(release){
-			climb.pullArm(-0.4);
-		} else{
+		if (pullUp){
+			climb.pullArm(1);
+		} else if(pullDown){
+			climb.pullArm(-1);
+		} else if(raiseUp){
+			climb.raiseRobot(1);
+		} else if(robotDown){
+			climb.raiseRobot(-1);
+		} else {
 			climb.pullArm(0);
+			climb.raiseRobot(0);
 		}
 		
-		/*---- INTAKE & TROUGH ----*/
-		// If trough button is pressed, switch servo state by subtracting angle from 90 degrees
-		if (troughButton){
-			intake.toggleTroughServo();
-		}
 
-		//System.out.println("sensitivity"+sensitivity);
+		/*---- INTAKE & TROUGH ----*/
+		// Trough door
+		/*
+		intake.changeState(changeServoState);
+*/
 	}
 
 	/* UTILITY FUNCTIONS */
 	/** Deadband 5 percent, used on the gamepad */
 	double Deadband(double value) {
 		/* Upper deadband */
-		if (value >= +0.075) 
+		if (value >= +0.05) 
 			return value;
 		/* Lower deadband */
-		if (value <= -0.075)
+		if (value <= -0.05)
 			return value;
 		/* Outside deadband */
 		return 0;

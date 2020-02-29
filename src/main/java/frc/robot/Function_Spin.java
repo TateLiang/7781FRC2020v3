@@ -24,12 +24,9 @@ public class Function_Spin {
 
      // Color wheel motor
 
-     WPI_TalonSRX _colorWheel = new WPI_TalonSRX(1);
+     WPI_VictorSPX _colorWheel = new WPI_VictorSPX(7);
     public void spinSetUp() {
-        
-
         _colorWheel.configFactoryDefault();
-
         
     }
 
