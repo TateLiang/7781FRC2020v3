@@ -24,12 +24,16 @@ import edu.wpi.first.wpilibj.TimedRobot; //import timed robot
 
 import java.awt.event.KeyEvent;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
+
 
 
 
 
 
 public class Robot extends TimedRobot{
+	WPI_VictorSPX shootMotor = new WPI_VictorSPX(11);
+	long servoTime = System.currentTimeMillis();
 	
 	long autonomousTime = System.currentTimeMillis();
 
@@ -41,28 +45,36 @@ public class Robot extends TimedRobot{
 	Function_Spin spin = new Function_Spin();
 
 	Joystick _gamepad = new Joystick(0);
+
+	int c = 0;
+
 	int targetColor;
 	@Override
 	public void robotInit() {
 		CameraServer.getInstance().startAutomaticCapture("epic",0);
 		driveTrain.driveSetup();	
+		autonomousTime = System.currentTimeMillis();
 	}
 	@Override
 	public void autonomousInit() {
 		driveTrain.driveSetup();
+		//intake.spinIn(true);
 	}
 
 	@Override 
 	public void autonomousPeriodic(){
-		if((System.currentTimeMillis()-autonomousTime)<3000){
+		if(c<150){
 			driveTrain.drivePeriodic(0, 0.5);
 		}
-		
+		c+=1;
+		//System.out.println((System.currentTimeMillis()-autonomousTime));
+		//intake.spinIn(false);
 	}
 
 
 	@Override
 	public void teleopInit(){
+		shootMotor.configFactoryDefault();
 		climb.armServoSetup();
 		intake.troughServoSetup();
 		wheel.colourSensorSetup();
@@ -72,6 +84,8 @@ public class Robot extends TimedRobot{
 	
 	@Override
 	public void teleopPeriodic() {	
+		
+		
 		
 		/*---- GAMEPAD ----*/
 		int POV = _gamepad.getPOV();
@@ -112,7 +126,9 @@ public class Robot extends TimedRobot{
 		
 		/*---- DRIVE ----*/
 		double forward = -1 * _gamepad.getY(); // Going forwards and backwards by tracking joystick position
-		double turn = _gamepad.getTwist(); // Turning by tracking joystick twist angle
+		 // Turning by tracking joystick twist angle
+		double turn = _gamepad.getX();
+		//double turn = (turn1+turn2)/2;
 		// Using deadband so minor joystick movements will not pass through and move the robot
 		forward = Deadband(forward);
 		turn = Deadband(turn);
@@ -125,7 +141,11 @@ public class Robot extends TimedRobot{
 		/*---- COLOUR WHEEL ----*/
 		
 		// Set color
-		if (redButton){
+		if(redButton&&greenButton){
+			shootMotor.set(0.6);
+			System.out.println("SHOOTING");
+
+		} else if (redButton){
 			targetColor = 0;
 		} else if(greenButton){
 			targetColor = 1;
@@ -133,7 +153,10 @@ public class Robot extends TimedRobot{
 			targetColor = 2;
 		} else if (yellowButton){
 			targetColor = 3;
-		} 
+		} else{
+			shootMotor.set(-0.25);
+			System.out.println("no SHOOTING");
+		}
 		
 		// Find color
 		String colorDetected = wheel.colourSensorPeriodic();
@@ -153,7 +176,17 @@ public class Robot extends TimedRobot{
 		}
 		
 		intake.spinIn(changeIntakeState);
+		
 
+	
+		
+		wheel.spinServo(POV);
+
+		
+
+		
+		
+		
 	
 		/*---- CLIMB ----*/
 

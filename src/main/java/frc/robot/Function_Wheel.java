@@ -17,12 +17,15 @@ import com.revrobotics.ColorMatch;
 
 import frc.robot.Function_Spin;
 
-
+import edu.wpi.first.wpilibj.Servo;
 // Import SmartDashboard
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Function_Wheel {
-    
+    long servoTime = System.currentTimeMillis();
+    Servo _cameraServo = new Servo(0);
+
+
     boolean automaticRotation = false;
     boolean automaticPosition = false;
     String firstColor;
@@ -53,6 +56,7 @@ public class Function_Wheel {
    
     
     public void colourSensorSetup() {
+        _cameraServo.setAngle(0);
         
         // Initiate color range variables
 		m_colorMatcher.addColorMatch(kBlueTarget);
@@ -184,5 +188,15 @@ public class Function_Wheel {
         if (automaticPosition==false&&automaticRotation==false){
             spin.spinMotor(0);
         }
+    }
+
+    public void spinServo(double angle){
+        if (angle >= 0  && (System.currentTimeMillis() - servoTime)>500){
+            
+            _cameraServo.setPosition(angle/360);
+            servoTime = System.currentTimeMillis();
+            System.out.println("servo spun");
+
+		}
     }
 }
